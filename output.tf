@@ -1,5 +1,5 @@
 output "resource_group_id" {
-  value = azurerm_resource_group.rg.id
+  value = data.azurerm_resource_group.rg.id
 }
 
 output "load_balancer_public_ip" {

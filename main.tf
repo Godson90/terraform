@@ -16,16 +16,9 @@ provider "azurerm" {
 
 data "azurerm_client_config" "current" {}
 
-# Resource group that contains all Azure infrastructure.
-resource "azurerm_resource_group" "rg" {
-  name     = var.resource_group_name
-  location = "East US "
-
-
-  tags = {
-    Environment = "TerraformDev"
-    Team        = "DevOps"
-  }
+# Existing resource group that contains all Azure infrastructure.
+data "azurerm_resource_group" "rg" {
+  name = var.resource_group_name
 }
 
 # Create a virtual network
@@ -33,14 +26,14 @@ resource "azurerm_virtual_network" "vnet" {
   name                = "myTFVnet"
   address_space       = ["10.0.0.0/16"]
   location            = "East US"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
 # Dedicated subnet required by the Azure VPN gateway.
 # Do not associate the application NSG with this subnet.
 resource "azurerm_subnet" "gateway" {
   name                 = "GatewaySubnet"
-  resource_group_name  = azurerm_resource_group.rg.name
+  resource_group_name  = data.azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.255.0/27"]
 }
@@ -48,8 +41,8 @@ resource "azurerm_subnet" "gateway" {
 # Static public IP used by the Point-to-Site VPN gateway.
 resource "azurerm_public_ip" "vpn_gateway" {
   name                = "myTFVpnGatewayIp"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   allocation_method   = "Static"
   sku                 = "Standard"
   zones               = ["1", "2", "3"]
@@ -58,8 +51,8 @@ resource "azurerm_public_ip" "vpn_gateway" {
 # Route-based Point-to-Site VPN gateway using OpenVPN and certificate authentication.
 resource "azurerm_virtual_network_gateway" "vpn" {
   name                = "myTFVpnGateway"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   type                = "Vpn"
   vpn_type            = "RouteBased"
   sku                 = "VpnGw1AZ"
@@ -89,7 +82,7 @@ resource "azurerm_virtual_network_gateway" "vpn" {
 # Create a subnet
 resource "azurerm_subnet" "subnet" {
   name                              = "myTFSubnet"
-  resource_group_name               = azurerm_resource_group.rg.name
+  resource_group_name               = data.azurerm_resource_group.rg.name
   virtual_network_name              = azurerm_virtual_network.vnet.name
   address_prefixes                  = ["10.0.1.0/24"]
   private_endpoint_network_policies = "Disabled"
@@ -99,7 +92,7 @@ resource "azurerm_subnet" "subnet" {
 # Do not associate an NSG with this subnet.
 resource "azurerm_subnet" "dns_resolver" {
   name                 = "DnsResolverSubnet"
-  resource_group_name  = azurerm_resource_group.rg.name
+  resource_group_name  = data.azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.254.0/28"]
 
@@ -118,8 +111,8 @@ resource "azurerm_subnet" "dns_resolver" {
 # Azure DNS Private Resolver for DNS queries arriving through the VPN.
 resource "azurerm_private_dns_resolver" "resolver" {
   name                = "myTFDnsResolver"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
   virtual_network_id  = azurerm_virtual_network.vnet.id
 }
 
@@ -127,7 +120,7 @@ resource "azurerm_private_dns_resolver" "resolver" {
 resource "azurerm_private_dns_resolver_inbound_endpoint" "resolver" {
   name                    = "myTFDnsInbound"
   private_dns_resolver_id = azurerm_private_dns_resolver.resolver.id
-  location                = azurerm_resource_group.rg.location
+  location                = data.azurerm_resource_group.rg.location
 
   ip_configurations {
     private_ip_allocation_method = "Static"
@@ -139,15 +132,15 @@ resource "azurerm_private_dns_resolver_inbound_endpoint" "resolver" {
 # Application Security Group for web application network identities.
 resource "azurerm_application_security_group" "app" {
   name                = "myTFApplicationAsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
 # NSG that permits only HTTP and HTTPS inbound traffic.
 resource "azurerm_network_security_group" "nsg" {
   name                = "myTFNsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   security_rule {
     # Permit inbound HTTP traffic for web requests.
@@ -224,8 +217,8 @@ resource "azurerm_subnet_network_security_group_association" "subnet_nsg" {
 # Static public IP used by the load balancer.
 resource "azurerm_public_ip" "lb" {
   name                = "myTFPublicIp"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   allocation_method   = "Static"
   sku                 = "Standard"
 }
@@ -233,8 +226,8 @@ resource "azurerm_public_ip" "lb" {
 # Standard load balancer that distributes public web traffic.
 resource "azurerm_lb" "lb" {
   name                = "myTFLb"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   sku                 = "Standard"
 
   frontend_ip_configuration {
@@ -273,8 +266,8 @@ resource "azurerm_lb_rule" "http" {
 # Cost-conscious Ubuntu VM for the web workload.
 resource "azurerm_linux_virtual_machine" "vm" {
   name                = "myTFVm"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
   size                = "Standard_D2s_v7"
 
   admin_username                  = "azureuser"
@@ -310,8 +303,8 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
 resource "azurerm_network_interface" "vm" {
   name                = "myTFVmNic"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
   ip_configuration {
     name                          = "internal"
     private_ip_address_allocation = "Dynamic"
@@ -334,8 +327,8 @@ resource "azurerm_network_interface_application_security_group_association" "vm"
 # Private storage account for blob data in the existing resource group.
 resource "azurerm_storage_account" "storage" {
   name                     = var.storage_account_name
-  resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
+  resource_group_name      = data.azurerm_resource_group.rg.name
+  location                 = data.azurerm_resource_group.rg.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
@@ -367,8 +360,8 @@ resource "azurerm_storage_container" "blob" {
 # Private endpoint that exposes Blob storage inside the existing VNet.
 resource "azurerm_private_endpoint" "storage" {
   name                = "myTFStoragePrivateEndpoint"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   subnet_id           = azurerm_subnet.subnet.id
 
   private_service_connection {
@@ -387,7 +380,7 @@ resource "azurerm_private_endpoint" "storage" {
 # Private DNS zone so VNet resources resolve the Blob endpoint privately.
 resource "azurerm_private_dns_zone" "blob" {
   name                = "privatelink.blob.core.windows.net"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "blob" {
@@ -399,8 +392,8 @@ resource "azurerm_private_dns_zone_virtual_network_link" "blob" {
 # RBAC-enabled Key Vault for application secrets and certificates.
 resource "azurerm_key_vault" "key_vault" {
   name                          = var.key_vault_name
-  location                      = azurerm_resource_group.rg.location
-  resource_group_name           = azurerm_resource_group.rg.name
+  location                      = data.azurerm_resource_group.rg.location
+  resource_group_name           = data.azurerm_resource_group.rg.name
   tenant_id                     = data.azurerm_client_config.current.tenant_id
   sku_name                      = "standard"
   rbac_authorization_enabled    = true
@@ -412,8 +405,8 @@ resource "azurerm_key_vault" "key_vault" {
 # Private endpoint for Key Vault access from the VNet and VPN.
 resource "azurerm_private_endpoint" "key_vault" {
   name                = "myTFKeyVaultPrivateEndpoint"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   subnet_id           = azurerm_subnet.subnet.id
 
   private_service_connection {
@@ -432,7 +425,7 @@ resource "azurerm_private_endpoint" "key_vault" {
 # Private DNS zone for Key Vault private endpoint name resolution.
 resource "azurerm_private_dns_zone" "key_vault" {
   name                = "privatelink.vaultcore.azure.net"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "key_vault" {

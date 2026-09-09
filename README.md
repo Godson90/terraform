@@ -125,7 +125,7 @@ Defaults are defined in `variable.tf`:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `resource_group_name` | `TFlearning02` | Existing or new resource group |
+| `resource_group_name` | `TFlearning02` | Existing Azure resource group to use |
 | `ssh_public_key` | No default | Public key value installed on the VM |
 | `storage_account_name` | `mytfstorageacct02` | Globally unique lowercase storage name |
 | `vpn_root_certificate` | No default | Base64-encoded DER public VPN root certificate |
@@ -185,7 +185,16 @@ terraform apply
 
 The `VpnGw1AZ` gateway can take a significant amount of time to create or update and incurs ongoing Azure charges. The gateway public IP is zone-redundant across zones 1, 2, and 3.
 
-If a resource already exists in Azure but is not in Terraform state, import it instead of creating a duplicate. Example:
+The resource group is read as a data source and is not created or managed by
+this configuration. It does not need to be imported. If an older state still
+contains the resource-group resource address, remove only that state address:
+
+```bash
+terraform state rm azurerm_resource_group.rg
+```
+
+For other resources that already exist in Azure but are not in Terraform
+state, import them instead of creating duplicates. Example:
 
 The import command requires the two required variables to be available, but
 the certificate value is not part of the Azure resource ID. For a local CLI
@@ -194,9 +203,6 @@ session connected to the HCP workspace, run:
 ```bash
 export TF_VAR_ssh_public_key="$(cat ~/.ssh/id_ed25519.pub)"
 export TF_VAR_vpn_root_certificate="$(base64 < ~/.vpn-root.cer | tr -d '\n')"
-
-terraform import azurerm_resource_group.rg \
-	"/subscriptions/c3c90939-5b92-421c-a37c-55fb5fa73aff/resourceGroups/TFlearning02"
 
 terraform import azurerm_virtual_network_gateway.vpn \
 	"/subscriptions/<subscription-id>/resourceGroups/TFlearning02/providers/Microsoft.Network/virtualNetworkGateways/myTFVpnGateway"
