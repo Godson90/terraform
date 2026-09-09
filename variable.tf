@@ -14,6 +14,12 @@ variable "storage_account_name" {
   default     = "mytfstorageacct02"
 }
 
+variable "key_vault_name" {
+  description = "Globally unique alphanumeric Azure Key Vault name."
+  type        = string
+  default     = "mytfkeyvault02"
+}
+
 variable "vpn_root_certificate_path" {
   description = "Path to the DER-encoded VPN root certificate (.cer)."
   type        = string

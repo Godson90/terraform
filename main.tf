@@ -14,6 +14,8 @@ provider "azurerm" {
   features {}
 }
 
+data "azurerm_client_config" "current" {}
+
 # Resource group that contains all Azure infrastructure.
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
@@ -391,6 +393,51 @@ resource "azurerm_private_dns_zone" "blob" {
 resource "azurerm_private_dns_zone_virtual_network_link" "blob" {
   name                = "myTFStorageDnsLink"
   private_dns_zone_id = azurerm_private_dns_zone.blob.id
+  virtual_network_id  = azurerm_virtual_network.vnet.id
+}
+
+# RBAC-enabled Key Vault for application secrets and certificates.
+resource "azurerm_key_vault" "key_vault" {
+  name                          = var.key_vault_name
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
+  tenant_id                     = data.azurerm_client_config.current.tenant_id
+  sku_name                      = "standard"
+  rbac_authorization_enabled    = true
+  public_network_access_enabled = false
+  purge_protection_enabled      = true
+  soft_delete_retention_days    = 7
+}
+
+# Private endpoint for Key Vault access from the VNet and VPN.
+resource "azurerm_private_endpoint" "key_vault" {
+  name                = "myTFKeyVaultPrivateEndpoint"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.subnet.id
+
+  private_service_connection {
+    name                           = "myTFKeyVaultConnection"
+    private_connection_resource_id = azurerm_key_vault.key_vault.id
+    is_manual_connection           = false
+    subresource_names              = ["vault"]
+  }
+
+  private_dns_zone_group {
+    name                 = "key-vault-dns-zone-group"
+    private_dns_zone_ids = [azurerm_private_dns_zone.key_vault.id]
+  }
+}
+
+# Private DNS zone for Key Vault private endpoint name resolution.
+resource "azurerm_private_dns_zone" "key_vault" {
+  name                = "privatelink.vaultcore.azure.net"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "key_vault" {
+  name                = "myTFKeyVaultDnsLink"
+  private_dns_zone_id = azurerm_private_dns_zone.key_vault.id
   virtual_network_id  = azurerm_virtual_network.vnet.id
 }
 
