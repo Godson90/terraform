@@ -81,7 +81,7 @@ resource "azurerm_virtual_network_gateway" "vpn" {
 
     root_certificate {
       name             = "vpn-root-certificate"
-      public_cert_data = filebase64(pathexpand(var.vpn_root_certificate_path))
+      public_cert_data = var.vpn_root_certificate
     }
   }
 }
@@ -282,7 +282,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
   admin_ssh_key {
     username   = "azureuser"
-    public_key = file(pathexpand(var.ssh_public_key_path))
+    public_key = var.ssh_public_key
   }
 
   source_image_reference {

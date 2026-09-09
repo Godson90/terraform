@@ -2,10 +2,9 @@ variable "resource_group_name" {
   default = "TFlearning02"
 }
 
-variable "ssh_public_key_path" {
-  description = "Path to the SSH public key used to access the VM instances."
+variable "ssh_public_key" {
+  description = "SSH public key used to access the VM instances."
   type        = string
-  default     = "~/.ssh/id_ed25519.pub"
 }
 
 variable "storage_account_name" {
@@ -20,10 +19,9 @@ variable "key_vault_name" {
   default     = "mytfkeyvault02"
 }
 
-variable "vpn_root_certificate_path" {
-  description = "Path to the DER-encoded VPN root certificate (.cer)."
+variable "vpn_root_certificate" {
+  description = "Base64-encoded DER data for the VPN root certificate (.cer)."
   type        = string
-  default     = "~/.vpn-root.cer"
 }
 
 variable "vpn_aad_audience" {

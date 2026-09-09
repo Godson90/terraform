@@ -62,8 +62,8 @@ Terraform configuration for an Azure application environment in **East US**. The
 	az account set --subscription "c3c90939-5b92-421c-a37c-55fb5fa73aff"
 	```
 
-- An SSH key pair at `~/.ssh/id_ed25519` and `~/.ssh/id_ed25519.pub`, or a different path supplied through `ssh_public_key_path`
-- A DER-encoded VPN root certificate at `~/.vpn-root.cer`, or a different path supplied through `vpn_root_certificate_path`
+- An SSH public key value for the VM, supplied through `ssh_public_key`
+- A base64-encoded DER-encoded VPN root certificate value, supplied through `vpn_root_certificate`
 - Permission to create Azure networking, compute, storage, and VPN resources
 
 The AzureRM provider is pinned to version `5.0.0` in `main.tf`. Terraform downloads this provider locally into `.terraform`, which is intentionally ignored by Git.
@@ -126,9 +126,9 @@ Defaults are defined in `variable.tf`:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `resource_group_name` | `TFlearning02` | Existing or new resource group |
-| `ssh_public_key_path` | `~/.ssh/id_ed25519.pub` | Public key installed on the VM |
+| `ssh_public_key` | No default | Public key value installed on the VM |
 | `storage_account_name` | `mytfstorageacct02` | Globally unique lowercase storage name |
-| `vpn_root_certificate_path` | `~/.vpn-root.cer` | DER-encoded public VPN root certificate |
+| `vpn_root_certificate` | No default | Base64-encoded DER public VPN root certificate |
 | `vpn_aad_audience` | Confirmed Entra application ID | VPN Entra audience |
 | `vpn_aad_issuer` | Tenant issuer URL | VPN Entra issuer |
 | `vpn_aad_tenant` | Tenant login URL | VPN Entra tenant |
@@ -138,10 +138,16 @@ Override values in a local `terraform.tfvars` file. Do not commit that file if i
 Example:
 
 ```hcl
-resource_group_name       = "TFlearning02"
-ssh_public_key_path        = "~/.ssh/id_ed25519.pub"
-storage_account_name       = "myuniquestorageacct01"
-vpn_root_certificate_path  = "~/.vpn-root.cer"
+resource_group_name   = "TFlearning02"
+ssh_public_key        = "ssh-ed25519 AAAA... user@example.com"
+storage_account_name  = "myuniquestorageacct01"
+vpn_root_certificate  = "<base64-encoded DER certificate>"
+```
+
+Generate the base64 certificate value for HCP Terraform with:
+
+```bash
+base64 < ~/.vpn-root.cer | tr -d '\n'
 ```
 
 ## Deploy
