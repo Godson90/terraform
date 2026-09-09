@@ -135,6 +135,22 @@ Defaults are defined in `variable.tf`:
 
 Override values in a local `terraform.tfvars` file. Do not commit that file if it contains environment-specific values.
 
+For HCP Terraform, add these as **Terraform variables** in the workspace settings. Do not add them as environment variables and do not commit their values to Git:
+
+| Name | Value | Sensitive |
+| --- | --- | --- |
+| `ssh_public_key` | Contents of `~/.ssh/id_ed25519.pub` | No |
+| `vpn_root_certificate` | Base64 output of `~/.vpn-root.cer` | No |
+
+You can copy the values on macOS with:
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+base64 < ~/.vpn-root.cer | tr -d '\n'
+```
+
+Set both variables in the HCP Terraform workspace before running a plan. The remote runner cannot access files stored on your Mac.
+
 Example:
 
 ```hcl
