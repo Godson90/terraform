@@ -59,7 +59,7 @@ Terraform configuration for an Azure application environment in **East US**. The
 
 	```bash
 	az login
-	az account set --subscription "c3c90939-5b92-421c-a37c-55fb5fa73aff"
+	az account set --subscription "c3c90939-5b92-**********************"
 	```
 
 - An SSH public key value for the VM, supplied through `ssh_public_key`
