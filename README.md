@@ -187,10 +187,26 @@ The `VpnGw1AZ` gateway can take a significant amount of time to create or update
 
 If a resource already exists in Azure but is not in Terraform state, import it instead of creating a duplicate. Example:
 
+The import command requires the two required variables to be available, but
+the certificate value is not part of the Azure resource ID. For a local CLI
+session connected to the HCP workspace, run:
+
 ```bash
+export TF_VAR_ssh_public_key="$(cat ~/.ssh/id_ed25519.pub)"
+export TF_VAR_vpn_root_certificate="$(base64 < ~/.vpn-root.cer | tr -d '\n')"
+
+terraform import azurerm_resource_group.rg \
+	"/subscriptions/c3c90939-5b92-421c-a37c-55fb5fa73aff/resourceGroups/TFlearning02"
+
 terraform import azurerm_virtual_network_gateway.vpn \
 	"/subscriptions/<subscription-id>/resourceGroups/TFlearning02/providers/Microsoft.Network/virtualNetworkGateways/myTFVpnGateway"
 ```
+
+If the HCP workspace already has `ssh_public_key` and `vpn_root_certificate`
+configured as Terraform variables, do not export them locally. Run the import
+from the directory initialized against that HCP workspace. Alternatively, use
+the workspace state-management import workflow. Importing into a local-only
+state file does not update HCP Terraform.
 
 ## VPN Connection
 
