@@ -8,6 +8,14 @@ terraform {
   }
 
   required_version = ">= 1.1.0"
+
+  cloud {
+  organization = "Defenstack_09"
+
+  workspaces {
+    name = "terraform"
+  }
+}
 }
 
 provider "azurerm" {
